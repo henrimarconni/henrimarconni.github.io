@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kushagra Gupta</title>
+<meta name="description" content="Kushagra Gupta. CSE student at IIIT Una. Builds compilers, emulators and low-level tools in C and Rust.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+
+    --bg: #050b1e;
+    --bg-2: #0a1432;
+    --text: #e6edff;
+    --muted: #8795bd;
+    --line: rgba(130, 160, 255, .16);
+    --accent: #5b8cff;
+    --accent-2: #8fd0ff;
+    --tint: rgba(91, 140, 255, .09);
+    --blob-a: #2a56ff;
+    --blob-b: #5236e8;
+    --blob-c: #12a8ff;
+    --blob-opacity: .55;
+    --grain-opacity: .07;
+    --glow: rgba(100, 150, 255, .20);
+
+    --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+    --body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --code: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #eef3ff;
+      --bg-2: #dfe8ff;
+      --text: #0b1433;
+      --muted: #52608a;
+      --line: rgba(30, 60, 160, .16);
+      --accent: #2349d6;
+      --accent-2: #0f7ad6;
+      --tint: rgba(35, 73, 214, .07);
+      --blob-opacity: .38;
+      --grain-opacity: .05;
+      --glow: rgba(60, 110, 255, .16);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef3ff;
+    --bg-2: #dfe8ff;
+    --text: #0b1433;
+    --muted: #52608a;
+    --line: rgba(30, 60, 160, .16);
+    --accent: #2349d6;
+    --accent-2: #0f7ad6;
+    --tint: rgba(35, 73, 214, .07);
+    --blob-opacity: .38;
+    --grain-opacity: .05;
+    --glow: rgba(60, 110, 255, .16);
+  }
+  :root[data-theme="dark"] { color-scheme: dark; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); height: 100%; }
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent-2);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  ::selection { background: var(--accent); color: #fff; }
+
+  /* ---------- Background ---------- */
+  .field { position: fixed; inset: 0; z-index: -2; overflow: hidden; background:
+      radial-gradient(120% 80% at 50% 0%, var(--bg-2), var(--bg) 70%); }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: var(--blob-opacity);
+    will-change: transform;
+  }
+  .blob.a { width: 640px; height: 640px; background: radial-gradient(circle, var(--blob-a), transparent 68%);
+            top: -180px; left: -140px; animation: driftA 26s ease-in-out infinite alternate; }
+  .blob.b { width: 560px; height: 560px; background: radial-gradient(circle, var(--blob-b), transparent 68%);
+            top: 28%; right: -200px; animation: driftB 32s ease-in-out infinite alternate; }
+  .blob.c { width: 520px; height: 520px; background: radial-gradient(circle, var(--blob-c), transparent 68%);
+            bottom: -220px; left: 22%; animation: driftC 29s ease-in-out infinite alternate; }
+  @keyframes driftA { to { transform: translate(180px, 140px) scale(1.18); } }
+  @keyframes driftB { to { transform: translate(-220px, -90px) scale(1.12); } }
+  @keyframes driftC { to { transform: translate(160px, -140px) scale(1.25); } }
+
+  .grain {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .cursor-glow {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 30%), var(--glow), transparent 60%);
+    transition: opacity .4s;
+  }
+
+  /* ---------- Layout ---------- */
+  .wrap { width: min(1080px, 100% - 48px); margin-inline: auto; }
+
+  header.nav {
+    position: sticky; top: 0; z-index: 10;
+    padding-top: env(safe-area-inset-top, 0px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 70%, transparent), transparent);
+  }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .nav .mark { font-family: var(--display); font-weight: 700; letter-spacing: -.01em; font-size: 1.05rem; }
+  .nav ul { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; }
+  .nav ul a { color: var(--muted); font-size: .95rem; transition: color .2s; }
+  .nav ul a:hover { color: var(--text); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    min-height: calc(100svh - 64px);
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 40px 0 72px;
+  }
+  .hero .intro { color: var(--muted); font-size: 1.05rem; margin: 0 0 18px; opacity: 0; animation: rise .8s .1s cubic-bezier(.2,.7,.2,1) forwards; }
+  h1.name {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(3.4rem, 12.5vw, 9.5rem);
+    line-height: .92;
+    letter-spacing: -.045em;
+    margin: 0;
+    background: linear-gradient(180deg, var(--text) 30%, var(--accent-2) 120%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  h1.name .line { display: block; }
+  h1.name .ch {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(.45em) rotate(3deg);
+    filter: blur(8px);
+    animation: letter .9s cubic-bezier(.2,.7,.2,1) forwards;
+    animation-delay: calc(var(--i) * 45ms + 250ms);
+  }
+  @keyframes letter { to { opacity: 1; transform: none; filter: blur(0); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  .hero .lede {
+    max-width: 34ch;
+    font-size: clamp(1.25rem, 2.6vw, 1.75rem);
+    line-height: 1.35;
+    font-family: var(--display);
+    font-weight: 400;
+    letter-spacing: -.015em;
+    margin: 34px 0 0;
+    opacity: 0; animation: rise .9s 1.3s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .term {
+    margin-top: 30px;
+    font-family: var(--code); font-size: .95rem;
+    color: var(--accent-2);
+    min-height: 1.6em;
+    opacity: 0; animation: rise .9s 1.6s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .term .prompt { color: var(--muted); margin-right: 10px; }
+  .term .caret { display: inline-block; width: .55em; height: 1.05em; background: var(--accent-2); vertical-align: -.17em; margin-left: 2px; animation: blink 1.05s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .hero .cta { margin-top: 44px; display: flex; gap: 14px; flex-wrap: wrap; opacity: 0; animation: rise .9s 1.9s cubic-bezier(.2,.7,.2,1) forwards; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border-radius: 999px;
+    border: 1px solid var(--line);
+    font-weight: 500; font-size: .98rem;
+    transition: background .25s, border-color .25s, transform .25s;
+  }
+  .btn:hover { background: var(--tint); border-color: var(--accent); transform: translateY(-2px); }
+  button.btn { font: inherit; font-weight: 500; font-size: .98rem; color: inherit; background: transparent; cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, #fff); }
+
+  /* ---------- Sections ---------- */
+  section { padding: 88px 0; border-top: 1px solid var(--line); }
+  h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2rem, 4.5vw, 3.1rem);
+    line-height: 1.05;
+    letter-spacing: -.03em;
+    margin: 0 0 14px;
+  }
+  .sec-intro { color: var(--muted); max-width: 52ch; margin: 0 0 44px; }
+
+  /* Project rows */
+  .rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) 2fr auto;
+    gap: 12px 40px;
+    align-items: baseline;
+    padding: 26px 8px;
+    border-bottom: 1px solid var(--line);
+    transition: background .3s, padding .3s;
+  }
+  a.row:hover, a.row:focus-visible { background: linear-gradient(90deg, var(--tint), transparent 85%); padding-left: 22px; }
+  .row .t { font-family: var(--display); font-weight: 600; font-size: 1.5rem; letter-spacing: -.02em; transition: color .25s; }
+  a.row:hover .t, a.row:focus-visible .t { color: var(--accent-2); }
+  .row .d { color: var(--muted); margin: 0; max-width: 58ch; }
+  .row .tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .tag {
+    font-size: .8rem; padding: 3px 11px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+  }
+  .tag.live { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent-2) 45%, transparent); }
+  .tag.live::before {
+    content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-2); margin-right: 7px; vertical-align: 1px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
+
+  /* Drocc feature */
+  .feature {
+    display: grid; grid-template-columns: 1fr; gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: clamp(24px, 4vw, 48px);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 55%);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .feature .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 36px; }
+  .feature h3 {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(2.6rem, 7vw, 5rem); letter-spacing: -.045em; line-height: .95; margin: 0;
+  }
+  .feature .blurb { color: var(--muted); max-width: 46ch; margin: 14px 0 0; }
+  .feature .rows { border-top-color: var(--line); }
+  .feature .row:last-child { border-bottom: 0; padding-bottom: 6px; }
+  .feature .row .t { font-size: 1.3rem; }
+
+  .subhead { font-family: var(--display); font-weight: 600; font-size: 1.35rem; letter-spacing: -.02em; margin: 72px 0 18px; }
+
+  /* Skills */
+  .skills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .skills h3 { font-family: var(--display); font-weight: 600; font-size: 1.2rem; margin: 0 0 6px; letter-spacing: -.015em; }
+  .skills .hint { color: var(--muted); font-size: .95rem; margin: 0 0 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; padding: 0; margin: 0; }
+  .chips li {
+    padding: 7px 15px; border-radius: 999px; border: 1px solid var(--line);
+    font-size: .95rem; background: var(--tint);
+    transition: border-color .25s, transform .25s;
+  }
+  .chips li:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .skills .big li { font-family: var(--display); font-weight: 700; font-size: 1.6rem; padding: 10px 26px; letter-spacing: -.02em; border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+
+  /* Story */
+  .story { display: grid; grid-template-columns: 1fr 1.4fr; gap: 56px; align-items: start; }
+  .story p { margin: 0 0 18px; max-width: 56ch; }
+  .story p.big { font-family: var(--display); font-size: clamp(1.4rem, 2.8vw, 2rem); line-height: 1.25; letter-spacing: -.02em; }
+
+  footer { padding: 72px 0 56px; border-top: 1px solid var(--line); }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 32px; }
+  footer .big { font-family: var(--display); font-weight: 800; font-size: clamp(2rem, 6vw, 4rem); letter-spacing: -.04em; line-height: 1; margin: 0; }
+  footer .links { display: flex; gap: 14px; flex-wrap: wrap; }
+  footer small { display: block; width: 100%; color: var(--muted); font-size: .9rem; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 820px) {
+    .row { grid-template-columns: 1fr; gap: 6px; padding: 22px 4px; }
+    .row .tags { justify-content: flex-start; margin-top: 8px; }
+    a.row:hover, a.row:focus-visible { padding-left: 12px; }
+    .skills { grid-template-columns: 1fr; gap: 36px; }
+    .story { grid-template-columns: 1fr; gap: 8px; }
+    .nav ul { gap: 18px; }
+    section { padding: 64px 0; }
+  }
+  @media (max-width: 460px) {
+    .nav ul li:nth-child(3) { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .blob, .tag.live::before, .term .caret { animation: none !important; }
+    h1.name .ch, .hero .intro, .hero .lede, .term, .hero .cta { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+    .cursor-glow { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="field" aria-hidden="true">
+  <div class="blob a"></div>
+  <div class="blob b"></div>
+  <div class="blob c"></div>
+</div>
+<div class="cursor-glow" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="mark" href="#top" aria-label="Kushagra Gupta, back to top">kg</a>
+    <nav aria-label="Primary">
+      <ul>
+        <li><a href="#drocc">Drocc</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#contact">Links</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <div class="hero">
+      <p class="intro">Hi, I'm</p>
+      <h1 class="name" id="name" aria-label="Kushagra Gupta">
+        <span class="line">Kushagra</span>
+        <span class="line">Gupta</span>
+      </h1>
+      <p class="lede">First-year CSE student at IIIT Una. I build compilers, emulators and the tools around them.</p>
+      <div class="term" aria-live="off"><span class="prompt">$</span><span id="typed"></span><span class="caret"></span></div>
+      <div class="cta">
+        <a class="btn primary" href="#drocc">See my work</a>
+        <a class="btn" href="https://github.com/henrimarconni" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn" href="https://coppamocha.itch.io" target="_blank" rel="noopener">Games on itch.io</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DROCC -->
+  <section id="drocc">
+    <div class="wrap">
+      <h2>The big one</h2>
+      <p class="sec-intro">Most of what I'm proud of lives in a single repository: a compiler toolchain for C, built from scratch.</p>
+
+      <div class="feature">
+        <div class="top">
+          <div>
+            <h3>Drocc</h3>
+            <p class="blurb">A compiler toolchain with a compiler, a test framework, an interface language and an assembler, all written by me.</p>
+          </div>
+          <a class="btn primary" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">View on GitHub</a>
+        </div>
+
+        <ul class="rows">
+          <li><a class="row" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">
+            <span class="t">chucci</span>
+            <p class="d">A C compiler. The core of the toolchain.</p>
+            <span class="tags"><span class="tag">C</span><span class="tag">compiler</span></span>
+          </a></li>
+          <li><a class="row" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">
+            <span class="t">SaulGood</span>
+            <p class="d">A test DSL that transpiles to C. Adding unit tests in C becomes trivial, with no library and no runtime registration.</p>
+            <span class="tags"><span class="tag">DSL</span><span class="tag">transpiler</span></span>
+          </a></li>
+          <li><a class="row" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">
+            <span class="t">sgrun</span>
+            <p class="d">The test runner for SaulGood. Tests compile to a dynamic library and run in parallel.</p>
+            <span class="tags"><span class="tag">parallel</span><span class="tag">testing</span></span>
+          </a></li>
+          <li><a class="row" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">
+            <span class="t">Interface Definition Language</span>
+            <p class="d">An IDL that transpiles to C and brings zero-cost abstractions and interfaces to the language.</p>
+            <span class="tags"><span class="tag">IDL</span><span class="tag">zero-cost</span></span>
+          </a></li>
+          <li><a class="row" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">
+            <span class="t">8080 assembler</span>
+            <p class="d">An assembler for the Intel 8080, built alongside the emulator I'm working on now.</p>
+            <span class="tags"><span class="tag">assembler</span><span class="tag">8080</span></span>
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="wrap">
+      <h2>Everything else</h2>
+      <p class="sec-intro">Smaller experiments, things in progress, and the games that got me started.</p>
+
+      <ul class="rows">
+        <li><a class="row" href="https://github.com/henrimarconni/veneno-engine" target="_blank" rel="noopener">
+          <span class="t">veneno-engine</span>
+          <p class="d">My own bytecode interpreter, written in Rust.</p>
+          <span class="tags"><span class="tag">Rust</span><span class="tag">interpreter</span></span>
+        </a></li>
+        <li><div class="row">
+          <span class="t">8080 CPU emulator</span>
+          <p class="d">Currently building an emulator for the Intel 8080, the companion to my assembler.</p>
+          <span class="tags"><span class="tag live">In progress</span></span>
+        </div></li>
+        <li><a class="row" href="https://coppamocha.itch.io" target="_blank" rel="noopener">
+          <span class="t">Games</span>
+          <p class="d">Games I made in 7th and 8th grade, including entries for game jams like Brackeys Game Jam and Ludum Dare.</p>
+          <span class="tags"><span class="tag">itch.io</span><span class="tag">game jams</span></span>
+        </a></li>
+      </ul>
+
+      <h3 class="subhead">What's next</h3>
+      <p class="story big" style="max-width:34ch;margin:0;font-family:var(--display);font-size:clamp(1.4rem,2.8vw,2rem);line-height:1.25;letter-spacing:-.02em">I want to write my own operating system.</p>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="wrap">
+      <h2>What I work with</h2>
+      <p class="sec-intro">Low-level first. I like knowing what the machine is actually doing.</p>
+
+      <div class="skills">
+        <div>
+          <h3>Advanced</h3>
+          <p class="hint">What I reach for first</p>
+          <ul class="chips big"><li>C</li></ul>
+        </div>
+        <div>
+          <h3>Comfortable</h3>
+          <p class="hint">Languages I know</p>
+          <ul class="chips"><li>C++</li><li>Rust</li><li>Python</li></ul>
+        </div>
+        <div>
+          <h3>Experienced</h3>
+          <p class="hint">Tooling I use day to day</p>
+          <ul class="chips"><li>CMake</li><li>Valgrind</li><li>GDB</li><li>clangd</li><li>clang-format</li><li>GitHub CI/CD</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LINUX -->
+  <section id="linux">
+    <div class="wrap">
+      <div class="story">
+        <h2>Linux, every day</h2>
+        <div>
+          <p class="big">I run Arch Linux as my daily driver, and I love it.</p>
+          <p>The terminal is where I'm most at home. I'm very comfortable on the command line, and I've hopped through a lot of distros to get here.</p>
+          <ul class="chips"><li>Arch Linux</li><li>Command line</li><li>Distro hopping</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY -->
+  <section id="story">
+    <div class="wrap">
+      <div class="story">
+        <h2>How it started</h2>
+        <div>
+          <p class="big">I began coding during the COVID lockdown, in 7th class.</p>
+          <p>I started by making games, entering game jams and shipping small projects as a kid. Over time I got curious about what sits underneath: how code becomes machine instructions, and how a CPU runs them. That curiosity is how I ended up writing compilers and emulators.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="contact">
+  <div class="wrap">
+    <p class="big">Let's build<br>something low-level.</p>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/henrimarconni" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn" href="https://www.linkedin.com/in/kushagra-gupta-a1b3bb420/" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="btn" href="https://coppamocha.itch.io" target="_blank" rel="noopener">itch.io</a>
+      <a class="btn" href="mailto:coppamocha@gmail.com">coppamocha@gmail.com</a>
+      <button class="btn" type="button" id="discord" data-copy="coppamocha" aria-label="Copy Discord username coppamocha">Discord: coppamocha</button>
+    </div>
+    <small>Kushagra Gupta, IIIT Una</small>
+  </div>
+</footer>
+
+<script>
+  // Split the name into letters for the load animation
+  (function () {
+    var lines = document.querySelectorAll('#name .line');
+    var n = 0;
+    lines.forEach(function (line) {
+      var text = line.textContent;
+      line.textContent = '';
+      line.setAttribute('aria-hidden', 'true');
+      for (var i = 0; i < text.length; i++) {
+        var s = document.createElement('span');
+        s.className = 'ch';
+        s.style.setProperty('--i', n++);
+        s.textContent = text[i];
+        line.appendChild(s);
+      }
+    });
+  })();
+
+  // Typed terminal line
+  (function () {
+    var el = document.getElementById('typed');
+    var phrases = [
+      'drocc build chucci',
+      'cargo run --release veneno-engine',
+      'emulate --cpu 8080',
+      'gdb ./next-thing',
+      'sudo pacman -Syu'
+    ];
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { el.textContent = ' ' + phrases[0]; return; }
+    var p = 0, c = 0, deleting = false;
+    function tick() {
+      var full = phrases[p];
+      el.textContent = ' ' + full.slice(0, c);
+      var delay = deleting ? 28 : 62;
+      if (!deleting && c === full.length) { deleting = true; delay = 1700; }
+      else if (deleting && c === 0) { deleting = false; p = (p + 1) % phrases.length; delay = 350; }
+      else { c += deleting ? -1 : 1; }
+      setTimeout(tick, delay);
+    }
+    setTimeout(tick, 2000);
+  })();
+
+  // Cursor glow
+  (function () {
+    var glow = document.querySelector('.cursor-glow');
+    if (!window.matchMedia('(pointer: fine)').matches) { glow.style.display = 'none'; return; }
+    var raf = null, x = 0, y = 0;
+    window.addEventListener('pointermove', function (e) {
+      x = e.clientX; y = e.clientY;
+      if (raf) return;
+      raf = requestAnimationFrame(function () {
+        document.documentElement.style.setProperty('--mx', x + 'px');
+        document.documentElement.style.setProperty('--my', y + 'px');
+        raf = null;
+      });
+    }, { passive: true });
+  })();
+  // Copy Discord username
+  (function () {
+    var b = document.getElementById('discord');
+    if (!b) return;
+    var original = b.textContent, timer = null;
+    b.addEventListener('click', function () {
+      function done() {
+        b.textContent = 'Copied!';
+        clearTimeout(timer);
+        timer = setTimeout(function () { b.textContent = original; }, 1600);
+      }
+      try {
+        navigator.clipboard.writeText(b.dataset.copy).then(done, function () {});
+      } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
