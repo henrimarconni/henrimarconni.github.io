@@ -145,11 +145,11 @@
     line-height: .92;
     letter-spacing: -.045em;
     margin: 0;
-    background: linear-gradient(180deg, var(--text) 30%, var(--accent-2) 120%);
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent; color: transparent;
+    color: var(--text);
+    text-shadow: 0 0 70px color-mix(in srgb, var(--accent) 40%, transparent);
   }
   h1.name .line { display: block; }
+  h1.name .line:last-child { color: var(--accent-2); }
   h1.name .ch {
     display: inline-block;
     opacity: 0;
@@ -355,7 +355,7 @@
         <div class="top">
           <div>
             <h3>Drocc</h3>
-            <p class="blurb">A compiler toolchain with a compiler, a test framework, an interface language and an assembler, all written by me.</p>
+            <p class="blurb">A compiler toolchain for C: a compiler, a test framework, an interface language, an assembler and developer tools, all written by me.</p>
           </div>
           <a class="btn primary" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">View on GitHub</a>
         </div>
@@ -385,6 +385,16 @@
             <span class="t">chu80</span>
             <p class="d">An assembler for the Intel 8080 made in C, built alongside the emulator I'm working on now.</p>
             <span class="tags"><span class="tag">assembler</span><span class="tag">8080</span></span>
+          </a></li>
+          <li><a class="row" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">
+            <span class="t">chuviz</span>
+            <p class="d">A Godbolt-style compiler explorer that runs in the terminal. It uses chucci's libraries internally.</p>
+            <span class="tags"><span class="tag">TUI</span><span class="tag">compiler explorer</span></span>
+          </a></li>
+          <li><a class="row" href="https://github.com/henrimarconni/drocc" target="_blank" rel="noopener">
+            <span class="t">amalgamator</span>
+            <p class="d">A small command-line tool that concatenates multiple C source files and expands #include "..." chains into a single C file. Useful for shipping single-file libraries, static analysis, or compiling on constrained toolchains.</p>
+            <span class="tags"><span class="tag">CLI</span><span class="tag">C</span></span>
           </a></li>
         </ul>
       </div>
